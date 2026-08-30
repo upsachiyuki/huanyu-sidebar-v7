@@ -4,9 +4,26 @@ v4 剧场版与 v6 Codex 双皮肤整合的 SillyTavern 客户端扩展，附视
 
 ## 安装
 
-1. 把 `huanyu-sidebar-v7/` 整个目录复制到 `SillyTavern/public/scripts/extensions/third-party/`。
-2. 刷新 SillyTavern，在「扩展程序」中确认「寰宇侧边栏 v7」已启用。
-3. 在扩展设置底部的「寰宇侧边栏 v7」区域选择皮肤和 VN 翻页形态。
+### 使用扩展管理器（推荐）
+
+1. 在 SillyTavern 打开「扩展」面板，选择「安装扩展」。
+2. 输入仓库地址：`https://github.com/upsachiyuki/huanyu-sidebar-v7`
+3. 安装完成后刷新页面，并确认「寰宇侧边栏 v7」已启用。
+4. 在扩展设置底部的「寰宇侧边栏 v7」区域选择皮肤和 VN 翻页形态。
+
+### 手动安装
+
+下载 Release 的源代码压缩包并解压，将其中的 `huanyu-sidebar-v7` 目录放入：
+
+`SillyTavern/public/scripts/extensions/third-party/`
+
+最终应能直接看到 `huanyu-sidebar-v7/manifest.json`，不要额外嵌套一层压缩包目录。然后刷新 SillyTavern。
+
+## 更新
+
+- 使用扩展管理器安装：在 SillyTavern 的扩展管理界面检查并安装更新。
+- 手动安装：先在面板切回「原生主题」并关闭旧版扩展，再用新版完整目录替换旧目录。不要只覆盖个别文件。
+- 从旧版或测试版升级后，建议强制刷新一次浏览器页面，让新 CSS 与脚本缓存立即生效。
 
 首次安装和旧测试设置迁移都保持 SillyTavern 原生主题，不会自动套用 v4/v6；只有在当前面板中明确选择皮肤后，刷新时才会继续应用该皮肤。
 
@@ -29,9 +46,15 @@ v4 剧场版与 v6 Codex 双皮肤整合的 SillyTavern 客户端扩展，附视
 ## 使用提醒
 
 - 通过 SillyTavern 的扩展管理器禁用或删除时，v7 会先自动恢复原生主题；手工删除目录前仍建议先在面板切到「原生主题」。
-- 检测到旧版 v6 脚本时，v7 会显示冲突提示并跳过自动皮肤应用；建议二选一。
+- 不要同时启用旧版寰宇 v4/v6 美化脚本或另一个 v7 副本。检测到旧版 v6 脚本时，v7 会显示冲突提示并跳过自动皮肤应用；建议二选一。
 - 原 v6 脚本创建的独立 Codex 项目侧栏（stock rail）没有移植；v7 使用 SillyTavern 原生侧栏的 host-rail 形态。
 - 系统开启 `prefers-reduced-motion` 时，翻页直接切换当前楼层，不播放动画。
+
+## 兼容性与反馈
+
+- 面向当前 SillyTavern 客户端使用；桌面端为主要适配目标。
+- 若遇到显示异常，请在反馈中附上 SillyTavern 版本、浏览器、当前皮肤（v4/v6）、是否开启视觉小说模式以及问题截图。
+- 问题反馈：<https://github.com/upsachiyuki/huanyu-sidebar-v7/issues>
 
 ## 版本
 
