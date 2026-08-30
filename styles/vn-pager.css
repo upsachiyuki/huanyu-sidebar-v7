@@ -1,0 +1,289 @@
+/* ============================================================
+   ===== 寰宇 v7 · VN 翻页器（仅 body.waifuMode 且 html[data-hy7-pager="on"]）=====
+   骨架：单楼层真分页；非当前楼层不参与渲染，长楼层在页内独立滚动。
+   三形态动画在 JS 过渡层（.hy7-flip-ghost）上播放，原文楼层零 transform。
+   ============================================================ */
+html[data-hy7-pager="on"] body.waifuMode #chat {
+  overflow: hidden !important;
+  scroll-snap-type: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+
+/* 酒馆的历史加载入口不是 .mes，会额外占据一整行并挤压当前页。
+   真分页期间暂时隐藏，退出 VN 后由原生样式自动恢复。 */
+html[data-hy7-pager="on"] body.waifuMode #chat > #show_more_messages {
+  display: none !important;
+}
+
+html[data-hy7-pager="on"] body.waifuMode #chat > .mes {
+  display: none !important;
+  min-height: 0;
+  opacity: 0;
+  scroll-snap-align: none;
+  transition: none;
+}
+
+html[data-hy7-pager="on"] body.waifuMode #chat > .mes.hy7-page-current {
+  display: flex !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: clamp(12px, 2vh, 24px) 10px !important;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  justify-content: safe center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+  scrollbar-gutter: stable;
+  box-sizing: border-box;
+  opacity: 1;
+}
+
+html[data-hy7-pager="on"] body.waifuMode #chat > .mes.hy7-page-current > .mes_block {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin-block: 0 !important;
+  box-sizing: border-box;
+}
+
+/* v4 的普通消息名片横跨 .mesAvatarWrapper 与 .mes_block 两个坐标系。
+   真分页把楼层变为纵向容器后，头像行会先占一整行，导致名片主体、头像和计数错位。
+   VN 当前页将头像包装层固定到消息内容起点，让两部分重新共享同一张名片坐标。 */
+html[data-hy7-pager="on"][data-hy7-skin="v4"] body.waifuMode
+  #chat > .mes.hy7-page-current:not([is_user="true"]):not(.user_mes) {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-content: safe center !important;
+  align-items: start !important;
+  justify-content: stretch !important;
+}
+html[data-hy7-pager="on"][data-hy7-skin="v4"] body.waifuMode
+  #chat > .mes.hy7-page-current:not([is_user="true"]):not(.user_mes) > .mesAvatarWrapper {
+  grid-area: 1 / 1;
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: var(--hy-card-height, 90px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 3;
+}
+html[data-hy7-pager="on"][data-hy7-skin="v4"] body.waifuMode
+  #chat > .mes.hy7-page-current:not([is_user="true"]):not(.user_mes) > .mes_block {
+  grid-area: 1 / 1;
+  z-index: 1;
+}
+
+/* 置顶卡出现时，它就是该用户楼层的可访问替身。两套皮肤统一隐藏来源楼层；
+   用户点击“显示原消息”时通过 revealed 类临时放行。 */
+html[data-hy7-skin] body #chat > .mes.hy7-user-source:not(.hy7-user-source-revealed) {
+  display: none !important;
+}
+
+/* v4/v6 共用同一套 VN 全高舞台。v6 过去仍落在酒馆原生的底部 40dvh，
+   因而上方空白、摘要与消息沉底；分页开启时统一改为完整可用高度。 */
+@media (min-width: 1001px) {
+  html[data-hy7-pager="on"][data-hy7-skin] body.waifuMode #sheld {
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 0 !important;
+  }
+
+  html[data-hy7-pager="on"][data-hy7-skin] body.waifuMode #chat {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    flex: 1 1 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html[data-hy7-pager="on"][data-hy7-skin] body.waifuMode #form_sheld {
+    flex: 0 0 auto !important;
+  }
+}
+
+.hy7-pager-arrow {
+  position: fixed;
+  top: 50%;
+  z-index: 3000;
+  display: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  color: #fbdbb3;
+  background: rgba(18, 20, 36, .85);
+  border: 1px solid rgba(251, 219, 179, .35);
+  border-radius: 50%;
+  opacity: .55;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transform: translateY(-50%);
+  transition: opacity .2s ease, transform .2s ease;
+  user-select: none;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .hy7-pager-arrow { background: rgba(18, 20, 36, .96); }
+}
+
+html[data-hy7-skin="v4"] .hy7-pager-arrow { color: #fbdbb3; background: rgba(18,20,36,.85); border-color: rgba(251,219,179,.35); }
+html[data-hy7-skin="v6"] .hy7-pager-arrow { color: #a8b4ff; background: rgba(34,34,34,.88); border-color: rgba(168,180,255,.3); }
+.hy7-pager-arrow:hover,
+.hy7-pager-arrow:focus-visible { opacity: 1; outline: 2px solid currentColor; outline-offset: 2px; transform: translateY(-50%) scale(1.06); }
+.hy7-pager-arrow[data-dir="prev"] { left: 10px; }
+.hy7-pager-arrow[data-dir="next"] { right: 10px; }
+html[data-hy7-pager="on"] body.waifuMode .hy7-pager-arrow { display: flex; }
+
+/* v4/v6 都有固定左侧工具栏；桌面端上一页按钮统一避开工具栏。 */
+@media (min-width: 1001px) {
+  html[data-hy7-pager="on"][data-hy7-skin] .hy7-pager-arrow[data-dir="prev"] {
+    left: calc(var(--hy-nav-width, 64px) + 10px);
+  }
+}
+
+/* #chat 原生用 bottom:10px 做视觉微调；插入摘要卡后会把聊天区向上挪进摘要。
+   只在 v7 摘要与聊天区相邻时取消该位移，保留其他宿主布局。 */
+html[data-hy7-skin] #sheld > .hy7-user-summary + #chat { bottom: 0; }
+
+/* 置顶指令卡的结构由双皮肤共享，皮肤文件只负责配色。
+   所有规则都带皮肤门禁，恢复原生主题后不会留下空白框。 */
+html[data-hy7-skin] .hy7-user-summary {
+  position: relative;
+  z-index: 24;
+  flex: 0 0 auto;
+  width: min(1120px, calc(100% - clamp(32px, 8vw, 112px)));
+  max-width: 100%;
+  margin: 8px auto 4px;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+html[data-hy7-skin] .hy7-user-summary[hidden] { display: none !important; }
+html[data-hy7-skin] .hy7-user-summary details,
+html[data-hy7-skin] .hy7-user-summary summary {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+html[data-hy7-skin] .hy7-user-summary summary {
+  min-height: 42px;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  list-style: none;
+  cursor: pointer;
+}
+html[data-hy7-skin] .hy7-user-summary summary::-webkit-details-marker { display: none; }
+html[data-hy7-skin] .hy7-summary-pin { flex: 0 0 auto; font: 15px/1 "JetBrains Mono", Consolas, monospace; }
+html[data-hy7-skin] .hy7-summary-label { flex: 0 0 auto; font-size: 11px; font-weight: 650; }
+html[data-hy7-skin] .hy7-summary-excerpt {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+html[data-hy7-skin] .hy7-summary-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  transition: transform .22s ease;
+}
+html[data-hy7-skin] .hy7-user-summary details[open] .hy7-summary-chevron { transform: rotate(180deg); }
+html[data-hy7-skin] .hy7-summary-body { padding: 0 13px 12px 37px; font-size: 12px; line-height: 1.65; }
+html[data-hy7-skin] .hy7-summary-body p {
+  max-height: min(28vh, 280px);
+  margin: 0 0 9px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+html[data-hy7-skin] .hy7-summary-body button { padding: 5px 9px; border-radius: 7px; font-size: 10px; cursor: pointer; }
+
+@media (max-width: 700px) {
+  html[data-hy7-skin] .hy7-user-summary {
+    width: calc(100% - 20px);
+    margin-top: 6px;
+  }
+  html[data-hy7-skin] .hy7-summary-label { display: none; }
+  html[data-hy7-skin] .hy7-summary-body { padding-left: 13px; }
+}
+
+.hy7-flip-ghost {
+  position: fixed;
+  z-index: 2990;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: var(--hy-radius, 12px);
+  transform-origin: center;
+  contain: paint;
+  opacity: 1;
+  backface-visibility: hidden;
+  will-change: opacity, transform, filter;
+}
+
+@keyframes hy7-ghost-slide-out {
+  from { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+  to { opacity: 0; transform: translateX(-6%) scale(.992); filter: blur(2px); }
+}
+@keyframes hy7-ghost-slide-in {
+  from { opacity: 0; transform: translateX(6%) scale(.992); filter: blur(2px); }
+  to { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+}
+@keyframes hy7-ghost-slide-out-reverse {
+  from { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+  to { opacity: 0; transform: translateX(6%) scale(.992); filter: blur(2px); }
+}
+@keyframes hy7-ghost-slide-in-reverse {
+  from { opacity: 0; transform: translateX(-6%) scale(.992); filter: blur(2px); }
+  to { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+}
+@keyframes hy7-ghost-book-out {
+  from { opacity: 1; transform: perspective(1200px) rotateY(0) scale(1); filter: blur(0); }
+  to { opacity: 0; transform: perspective(1200px) rotateY(-16deg) scale(.992); filter: blur(1.5px); }
+}
+@keyframes hy7-ghost-book-in {
+  from { opacity: 0; transform: perspective(1200px) rotateY(16deg) scale(.992); filter: blur(1.5px); }
+  to { opacity: 1; transform: perspective(1200px) rotateY(0) scale(1); filter: blur(0); }
+}
+@keyframes hy7-ghost-curtain-out {
+  from { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  to { opacity: 0; transform: translateY(-4%) scale(.994); filter: blur(2px); }
+}
+@keyframes hy7-ghost-curtain-in {
+  from { opacity: 0; transform: translateY(4%) scale(.994); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.hy7-flip-ghost[data-phase="out"] { animation-duration: .56s; animation-timing-function: cubic-bezier(.22, 1, .36, 1); animation-fill-mode: forwards; }
+.hy7-flip-ghost[data-phase="in"] { animation-duration: .58s; animation-timing-function: cubic-bezier(.22, 1, .36, 1); animation-fill-mode: both; }
+.hy7-flip-ghost[data-style="slide"][data-phase="out"] { animation-name: hy7-ghost-slide-out; }
+.hy7-flip-ghost[data-style="slide"][data-phase="in"] { animation-name: hy7-ghost-slide-in; }
+.hy7-flip-ghost[data-style="slide"][data-direction="-1"][data-phase="out"] { animation-name: hy7-ghost-slide-out-reverse; }
+.hy7-flip-ghost[data-style="slide"][data-direction="-1"][data-phase="in"] { animation-name: hy7-ghost-slide-in-reverse; }
+.hy7-flip-ghost[data-style="book"][data-phase="out"] { animation-name: hy7-ghost-book-out; transform-origin: left center; }
+.hy7-flip-ghost[data-style="book"][data-phase="in"] { animation-name: hy7-ghost-book-in; transform-origin: left center; }
+.hy7-flip-ghost[data-style="curtain"][data-phase="out"] { animation-name: hy7-ghost-curtain-out; }
+.hy7-flip-ghost[data-style="curtain"][data-phase="in"] { animation-name: hy7-ghost-curtain-in; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hy7-flip-ghost { animation: none !important; }
+  html[data-hy7-pager="on"] body.waifuMode #chat > .mes { transition: none !important; }
+}

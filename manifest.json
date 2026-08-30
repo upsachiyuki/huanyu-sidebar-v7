@@ -1,0 +1,14 @@
+{
+  "display_name": "寰宇侧边栏 v7",
+  "loading_order": 100,
+  "requires": [],
+  "optional": [],
+  "js": "loader-1.0.14.js",
+  "author": "yuki",
+  "version": "1.0.14",
+  "hooks": {
+    "disable": "disableHuanyuV7",
+    "delete": "deleteHuanyuV7"
+  },
+  "homePage": ""
+}
