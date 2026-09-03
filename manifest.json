@@ -3,9 +3,9 @@
   "loading_order": 100,
   "requires": [],
   "optional": [],
-  "js": "loader-1.0.14.js",
+  "js": "loader-1.0.15.js",
   "author": "yuki",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "hooks": {
     "disable": "disableHuanyuV7",
     "delete": "deleteHuanyuV7"

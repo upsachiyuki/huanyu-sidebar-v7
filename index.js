@@ -1,7 +1,9 @@
 /* 寰宇侧边栏 v7 —— v4 剧场版 + v6 Codex 双皮肤整合扩展。
  * 结构：§A 生命周期与工具 / §B 设置 / §C 主题引擎 / §D 用户指令卡 / §E VN 翻页器
  * 原则：只加类名和克隆过渡层，不改酒馆原生 DOM 结构；幂等初始化；完整 teardown。 */
-import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.14';
+import { applyPowerUserSettings } from '/scripts/power-user.js';
+import { applyNativeThemeSettings } from './theme-runtime.js?v=1.0.15';
+import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.15';
 
 (() => {
   'use strict';
@@ -101,7 +103,7 @@ import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.14';
     panel.innerHTML = `
       <div class="hy7-settings-title" id="hy7-settings-title">
         <span>寰宇侧边栏 v7</span>
-        <span class="hy7-version-tag">1.0.14</span>
+        <span class="hy7-version-tag">1.0.15</span>
       </div>
       <div class="hy7-row">
         <label for="hy7-skin-select">外观版本</label>
@@ -206,7 +208,7 @@ import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.14';
   }
 
   const api = {
-    version: '1.0.14',
+    version: '1.0.15',
     destroy({ restoreTheme = true, forgetSkin = false } = {}) {
       if (destroyed) return;
       if (forgetSkin) {
@@ -286,7 +288,7 @@ import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.14';
     if (!SKINS.includes(skin)) return;
     const link = doc.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `/${EXT_DIR}/styles/${skin === 'v4' ? 'v4-theater.css' : 'v6-codex.css'}?v=1.0.14`;
+    link.href = `/${EXT_DIR}/styles/${skin === 'v4' ? 'v4-theater.css' : 'v6-codex.css'}?v=1.0.15`;
     link.dataset.hy7Skin = skin;
     doc.head.appendChild(link);
     root.setAttribute('data-hy7-skin', skin);
@@ -303,7 +305,7 @@ import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.14';
     if (qs('link[data-hy7-shared="pager"]')) return;
     const link = doc.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `/${EXT_DIR}/styles/vn-pager.css?v=1.0.14`;
+    link.href = `/${EXT_DIR}/styles/vn-pager.css?v=1.0.15`;
     link.dataset.hy7Shared = 'pager';
     doc.head.appendChild(link);
     track(link);
@@ -312,11 +314,9 @@ import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.14';
   function applySkin(skin) {
     if (!SKINS.includes(skin)) return false;
     const context = getContext();
-    const bridge = typeof window.baibaokuHydrateTheme === 'function'
-      && typeof window.baibaokuApplyNativeTheme === 'function';
     const theme = HY_THEMES[skin];
-    if (!context?.powerUserSettings || !bridge) {
-      console.error('[寰宇v7] 原生主题桥不可用，已阻止不完整皮肤挂载');
+    if (!context?.powerUserSettings) {
+      console.error('[寰宇v7] 酒馆主题设置不可用，已阻止不完整皮肤挂载');
       return false;
     }
     const powerUser = context.powerUserSettings;
@@ -325,9 +325,19 @@ import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.14';
       || doc.body?.classList.contains('waifuMode')
       || qs('#waifuMode')?.checked
     );
-    if (!readRestorePoint()) saveRestorePoint();
-    window.baibaokuHydrateTheme({ ...theme });
-    window.baibaokuApplyNativeTheme(theme.name);
+    const restorePoint = readRestorePoint();
+    if (!restorePoint) {
+      saveRestorePoint();
+    } else if (restorePoint.theme && String(powerUser.theme).startsWith('寰宇v7')) {
+      // 迁移早期测试版通过外部桥写入的临时主题名，继续保留真实原生主题名。
+      powerUser.theme = restorePoint.theme;
+    }
+    try {
+      applyNativeThemeSettings(powerUser, theme, applyPowerUserSettings);
+    } catch (error) {
+      console.error('[寰宇v7] 应用原生主题设置失败：', error);
+      return false;
+    }
     // 两套主题对象都以关闭 VN 为默认值；皮肤之间切换时只保留用户已开启的 VN，
     // 不让原生 applyTheme() 把当前阅读状态意外重置。
     if (keepWaifuMode) {
@@ -349,24 +359,23 @@ import { HY_THEMES, DEFAULT_SKIN, SKINS } from './themes.js?v=1.0.14';
     if (!context?.powerUserSettings) return false;
     const settings = context.powerUserSettings;
     welcomeWaifuSuspended = false;
-    const bridge = typeof window.baibaokuHydrateTheme === 'function'
-      && typeof window.baibaokuApplyNativeTheme === 'function';
     let restored = false;
-    if (bridge && snapshot?.theme) {
-      window.baibaokuHydrateTheme({ ...snapshot, name: snapshot.theme });
-      window.baibaokuApplyNativeTheme(snapshot.theme);
-      restored = true;
-    } else if (snapshot) {
-      Object.assign(settings, snapshot);
-      restored = true;
-    } else if (bridge && settings.theme && !String(settings.theme).startsWith('寰宇v7')) {
+    if (snapshot) {
       try {
-        window.baibaokuApplyNativeTheme(settings.theme);
-        restored = true;
+        restored = applyNativeThemeSettings(settings, snapshot, applyPowerUserSettings);
       } catch (error) {
-        console.warn('[寰宇v7] 原主题名称回退失败：', error);
+        console.warn('[寰宇v7] 原主题快照还原失败：', error);
       }
-    } else {
+    } else if (settings.theme && !String(settings.theme).startsWith('寰宇v7')) {
+      const nativeThemeSelect = qs('#themes');
+      const themeExists = [...(nativeThemeSelect?.options || [])].some(option => option.value === settings.theme);
+      if (nativeThemeSelect && themeExists) {
+        nativeThemeSelect.value = settings.theme;
+        nativeThemeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        restored = true;
+      }
+    }
+    if (!restored) {
       console.warn('[寰宇v7] 无可用还原点，已卸载 v7 皮肤层');
     }
     for (const link of qsa('link[data-hy7-skin]')) link.remove();

@@ -1,0 +1,10 @@
+{
+  "name": "huanyu-sidebar-v7",
+  "version": "1.0.15",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check index.js && node --check theme-runtime.js && node --check loader-1.0.15.js",
+    "test": "node --test tests/*.test.js"
+  }
+}

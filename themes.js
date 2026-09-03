@@ -1,7 +1,7 @@
 /* 寰宇侧边栏 v7 · 两套主题对象。
  * v4：剧场版 JSON 37 字段原样（custom_css 除外——皮肤 CSS 由扩展自持）。
  * v6：LIVE_CSS 的 SmartTheme 覆写值反填 + Codex 风格 UI 开关。
- * 皮肤名带「寰宇v7」前缀，供 baibaokuHydrateTheme 注入 themes[] 数组。 */
+ * 皮肤名只用于扩展内识别；运行时直接覆写酒馆 power_user 字段，不注入原生主题列表。 */
 export const HY_THEMES = {
   v4: {
     name: '寰宇v7 · 剧场版',
