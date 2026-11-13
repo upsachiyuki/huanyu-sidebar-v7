@@ -1,10 +1,10 @@
 {
   "name": "huanyu-sidebar-v7",
-  "version": "1.0.15",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check index.js && node --check theme-runtime.js && node --check loader-1.0.15.js",
+    "check": "node --check index.js && node --check theme-runtime.js && node --check themes.js && node --check loader-1.1.0.js && node --check src/constants.js && node --check src/utils.js && node --check src/state.js && node --check src/theme-engine.js && node --check src/settings-panel.js && node --check src/user-summary.js && node --check src/vn-pager.js && node --check src/chat-enhancements.js && node --check src/viewport-guard.js",
     "test": "node --test tests/*.test.js"
   }
 }
